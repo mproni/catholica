@@ -7,8 +7,11 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+var bot *tgbotapi.BotAPI
+
 func main() {
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_APITOKEN"))
+	var err error
+	bot, err = tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_APITOKEN"))
 	if err != nil {
 		panic(err)
 	}
@@ -42,18 +45,50 @@ func main() {
 	// как только поступило сообщение, то присваиваем
 	// его переменной update и обрабатываем.
 	for update := range updates {
-		if update.Message == nil {
+		if update.Message != nil {
+			message(update)
+		} else if update.EditedMessage != nil {
+			editedMessage(update)
+		} else {
 			continue
 		}
 
 		// если отправлять в ответ update.Message.Text, то может возникнуть
 		// такая ситуация, что сообщение будет пустым (если нам пришла,
 		// например, картинка), это будет Bad Request и мы вылетим с panic.
-		msg := tgbotapi.NewMessage(update.Message.From.ID, "Сообщение получено!")
 
-		_, err := bot.Send(msg)
-		if err != nil {
-			panic(err)
-		}
+		/*
+			msg := tgbotapi.NewMessage(update.Message.From.ID, "Сообщение получено!")
+
+			_, err := bot.Send(msg)
+			if err != nil {
+				panic(err)
+			}
+		*/
+	}
+}
+
+func message(update tgbotapi.Update) {
+	// если отправлять в ответ update.Message.Text, то может возникнуть
+	// такая ситуация, что сообщение будет пустым (если нам пришла,
+	// например, картинка), это будет Bad Request и мы вылетим с panic.
+	msg := tgbotapi.NewMessage(update.Message.From.ID, update.Message.Text)
+
+	_, err := bot.Send(msg)
+	if err != nil {
+		panic(err)
+	}
+}
+
+// эта функция позволяет получать сообщение каждый раз после его изменения,
+// иначе говоря, можно сохранить первое сообщение и все его последующие
+// изменения. то есть любое сообщение навсегда моё.
+// под EditedMessage хранится такая же структура Message
+func editedMessage(update tgbotapi.Update) {
+	msg := tgbotapi.NewMessage(update.EditedMessage.From.ID, update.EditedMessage.Text)
+
+	_, err := bot.Send(msg)
+	if err != nil {
+		panic(err)
 	}
 }
