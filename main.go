@@ -46,9 +46,11 @@ func main() {
 			continue
 		}
 
-		msg := tgbotapi.NewMessage(update.Message.From.ID, update.Message.Text)
+		// если отправлять в ответ update.Message.Text, то может возникнуть
+		// такая ситуация, что сообщение будет пустым (если нам пришла,
+		// например, картинка), это будет Bad Request и мы вылетим с panic.
+		msg := tgbotapi.NewMessage(update.Message.From.ID, "Сообщение получено!")
 
-		// паникует, если отправить картинку
 		_, err := bot.Send(msg)
 		if err != nil {
 			panic(err)
